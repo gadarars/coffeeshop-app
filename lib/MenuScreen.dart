@@ -1,21 +1,67 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'coffee_image.dart';
+import 'drink.dart';
 
 
-const List<Map<String, String>> menuItems = [
-  {'name': 'Espresso', 'category': 'Hot coffee'},
-  {'name': 'Latte', 'category': 'Hot coffee'},
-  {'name': 'Cappuccino', 'category': 'Hot coffee'},
-  {'name': 'Mocha', 'category': 'Hot coffee'},
-  {'name': 'Iced Coffee', 'category': 'Cold coffee'},
-  {'name': 'Croissant', 'category': 'Bakery'},
-];
-
-class MenuScreen extends StatelessWidget {
+class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
+
+  @override
+  State<MenuScreen> createState() => _MenuScreenState();
+}
+
+class _MenuScreenState extends State<MenuScreen> {
+  List<Drink> drinks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDrinks();
+  }
+
+  Future<void> fetchDrinks() async {
+    try {
+      final response = await Dio().get('https://api.sampleapis.com/coffee/hot');
+      final List data = response.data as List;
+
+      setState(() {
+        drinks = data
+            .map((e) => Drink.fromJson(e as Map<String, dynamic>))
+            .toList();
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+
+    Widget body;
+    if (drinks.isEmpty) {
+      body = const Center(child: CircularProgressIndicator());
+    } else {
+      body = ListView.builder(
+        padding: const EdgeInsets.all(12),
+        itemCount: drinks.length,
+        itemBuilder: (context, index) {
+          final d = drinks[index];
+          return Card(
+            child: ListTile(
+              leading: CoffeeImage(url: d.imageUrl),
+              title: Text(d.name),
+              subtitle: Text(
+                d.ingredients,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          );
+        },
+      );
+    }
 
     return Scaffold(
       backgroundColor: colors.primaryContainer,
@@ -24,22 +70,7 @@ class MenuScreen extends StatelessWidget {
         backgroundColor: colors.primary,
         foregroundColor: colors.onPrimary,
       ),
-      body: SafeArea(
-        child: ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: menuItems.length,
-          itemBuilder: (context, index) {
-            final item = menuItems[index];
-            return Card(
-              child: ListTile(
-                leading: const Icon(Icons.local_cafe),
-                title: Text(item['name']!),
-                subtitle: Text(item['category']!),
-              ),
-            );
-          },
-        ),
-      ),
+      body: SafeArea(child: body),
     );
   }
 }
