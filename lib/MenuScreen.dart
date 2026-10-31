@@ -13,6 +13,7 @@ class MenuScreen extends StatefulWidget {
 
 class _MenuScreenState extends State<MenuScreen> {
   List<Drink> drinks = [];
+  Set<String> favoriteNames = {};
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _MenuScreenState extends State<MenuScreen> {
         itemCount: drinks.length,
         itemBuilder: (context, index) {
           final d = drinks[index];
+          final isFavorite = favoriteNames.contains(d.name);
           return Card(
             child: ListTile(
               leading: CoffeeImage(url: d.imageUrl),
@@ -56,6 +58,21 @@ class _MenuScreenState extends State<MenuScreen> {
                 d.ingredients,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+              ),
+              trailing: IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? colors.secondary : Colors.grey,
+                ),
+                onPressed: () {
+                  setState(() {
+                    if (isFavorite) {
+                      favoriteNames.remove(d.name);
+                    } else {
+                      favoriteNames.add(d.name);
+                    }
+                  });
+                },
               ),
             ),
           );
