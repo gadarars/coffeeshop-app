@@ -7,6 +7,7 @@
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'db_helper.dart';
 import 'drink.dart';
@@ -42,10 +43,15 @@ class MenuViewModel extends ChangeNotifier {
   }
 
   Future<void> loadCachedDrinks() async {
-    final cached = await DBHelper.getCachedDrinks();
-    if (drinks.isEmpty && cached.isNotEmpty) {
-      drinks = cached;
-      notifyListeners();
+    if (kIsWeb) return;
+    try {
+      final cached = await DBHelper.getCachedDrinks();
+      if (drinks.isEmpty && cached.isNotEmpty) {
+        drinks = cached;
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Failed to load cached drinks: $e');
     }
   }
 
@@ -61,7 +67,9 @@ class MenuViewModel extends ChangeNotifier {
       drinks = fetchedDrinks;
       error = null;
       notifyListeners();
-      await DBHelper.cacheDrinks(fetchedDrinks);
+      if (!kIsWeb) {
+        await DBHelper.cacheDrinks(fetchedDrinks);
+      }
     } catch (e) {
       error = e.toString();
       notifyListeners();
