@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'coffee_image.dart';
 import 'drink.dart';
 
@@ -14,11 +15,32 @@ class MenuScreen extends StatefulWidget {
 class _MenuScreenState extends State<MenuScreen> {
   List<Drink> drinks = [];
   Set<String> favoriteNames = {};
+  final SharedPreferencesAsync _prefs = SharedPreferencesAsync();
+  static const _favKey = 'favorite_drinks';
 
   @override
   void initState() {
     super.initState();
+    _loadFavorites();
     fetchDrinks();
+  }
+
+  Future<void> _loadFavorites() async {
+    final saved = await _prefs.getStringList(_favKey) ?? [];
+    setState(() {
+      favoriteNames = saved.toSet();
+    });
+  }
+
+  Future<void> _toggleFavorite(String name) async {
+    setState(() {
+      if (favoriteNames.contains(name)) {
+        favoriteNames.remove(name);
+      } else {
+        favoriteNames.add(name);
+      }
+    });
+    await _prefs.setStringList(_favKey, favoriteNames.toList());
   }
 
   Future<void> fetchDrinks() async {
@@ -64,15 +86,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   isFavorite ? Icons.favorite : Icons.favorite_border,
                   color: isFavorite ? colors.secondary : Colors.grey,
                 ),
-                onPressed: () {
-                  setState(() {
-                    if (isFavorite) {
-                      favoriteNames.remove(d.name);
-                    } else {
-                      favoriteNames.add(d.name);
-                    }
-                  });
-                },
+                onPressed: () => _toggleFavorite(d.name),
               ),
             ),
           );
