@@ -1,11 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'coffee_image.dart';
-import 'drink.dart';
 import 'favorites_screen.dart';
-import 'db_helper.dart';
-
+import 'menu_view_model.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
@@ -15,99 +11,23 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  List<Drink> drinks = [];
-  Set<String> favoriteNames = {};
-  final SharedPreferencesAsync _prefs = SharedPreferencesAsync();
-  static const _favKey = 'favorite_drinks';
+  final MenuViewModel _viewModel = MenuViewModel();
 
   @override
   void initState() {
     super.initState();
-    _loadFavorites();
-    _loadCachedDrinks();
-    fetchDrinks();
+    _viewModel.load();
   }
 
-  Future<void> _loadCachedDrinks() async {
-    final cached = await DBHelper.getCachedDrinks();
-    if (drinks.isEmpty && cached.isNotEmpty) {
-      setState(() {
-        drinks = cached;
-      });
-    }
-  }
-
-  Future<void> _loadFavorites() async {
-    final saved = await _prefs.getStringList(_favKey) ?? [];
-    setState(() {
-      favoriteNames = saved.toSet();
-    });
-  }
-
-  Future<void> _toggleFavorite(String name) async {
-    setState(() {
-      if (favoriteNames.contains(name)) {
-        favoriteNames.remove(name);
-      } else {
-        favoriteNames.add(name);
-      }
-    });
-    await _prefs.setStringList(_favKey, favoriteNames.toList());
-  }
-
-  Future<void> fetchDrinks() async {
-    try {
-      final response = await Dio().get('https://api.sampleapis.com/coffee/hot');
-      final List data = response.data as List;
-
-      final fetchedDrinks = data
-          .map((e) => Drink.fromJson(e as Map<String, dynamic>))
-          .toList();
-
-      setState(() {
-        drinks = fetchedDrinks;
-      });
-      await DBHelper.cacheDrinks(fetchedDrinks);
-    } catch (e) {
-      print(e);
-    }
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
-    Widget body;
-    if (drinks.isEmpty) {
-      body = const Center(child: CircularProgressIndicator());
-    } else {
-      body = ListView.builder(
-        padding: const EdgeInsets.all(12),
-        itemCount: drinks.length,
-        itemBuilder: (context, index) {
-          final d = drinks[index];
-          final isFavorite = favoriteNames.contains(d.name);
-          return Card(
-            child: ListTile(
-              leading: CoffeeImage(url: d.imageUrl),
-              title: Text(d.name),
-              subtitle: Text(
-                d.ingredients,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: IconButton(
-                icon: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? colors.secondary : Colors.grey,
-                ),
-                onPressed: () => _toggleFavorite(d.name),
-              ),
-            ),
-          );
-        },
-      );
-    }
 
     return Scaffold(
       backgroundColor: colors.primaryContainer,
@@ -123,8 +43,8 @@ class _MenuScreenState extends State<MenuScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => FavoritesScreen(
-                    savedDrinks: drinks
-                        .where((d) => favoriteNames.contains(d.name))
+                    savedDrinks: _viewModel.drinks
+                        .where((d) => _viewModel.favoriteNames.contains(d.name))
                         .toList(),
                   ),
                 ),
@@ -133,7 +53,47 @@ class _MenuScreenState extends State<MenuScreen> {
           ),
         ],
       ),
-      body: SafeArea(child: body),
+      body: SafeArea(
+        child: ListenableBuilder(
+          listenable: _viewModel,
+          builder: (context, child) {
+            if (_viewModel.drinks.isEmpty && _viewModel.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (_viewModel.drinks.isEmpty && _viewModel.error != null) {
+              return Center(child: Text('Error: ${_viewModel.error}'));
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: _viewModel.drinks.length,
+              itemBuilder: (context, index) {
+                final d = _viewModel.drinks[index];
+                final isFavorite = _viewModel.favoriteNames.contains(d.name);
+                return Card(
+                  child: ListTile(
+                    leading: CoffeeImage(url: d.imageUrl),
+                    title: Text(d.name),
+                    subtitle: Text(
+                      d.ingredients,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? colors.secondary : Colors.grey,
+                      ),
+                      onPressed: () => _viewModel.toggleFavorite(d.name),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
     );
   }
 }
