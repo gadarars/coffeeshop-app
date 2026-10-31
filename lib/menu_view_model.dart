@@ -1,8 +1,9 @@
 /*
-| | SharedPreferencesAsync | SharedPreferencesWithCache |
-| getStringList return type | Future<List<String>?> (must await) | List<String>? (already in memory) |
-| Reading a key not in allowList | returns null | throws an error |
-| When it reads from disk | every read | once at create(), then from memory |
+| Feature | SharedPreferencesAsync | SharedPreferencesWithCache |
+| :--- | :--- | :--- |
+| **Returns list** | It returns a Future that you must await because it reads from the disk. | It returns the list immediately because it is already loaded in memory. |
+| **Missing key in allowList** | It returns null or the default value. | It throws an error if you try to read a key not in the allowList. |
+| **Disk read timing** | It reads from the disk every time you call a read method. | It reads from the disk only once when create() is called, then uses memory. |
 */
 
 import 'package:dio/dio.dart';
