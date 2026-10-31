@@ -52,7 +52,7 @@ class MenuViewModel extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Failed to load cached drinks: $e');
+      debugPrint('Failed to load cached drinks: $e');
     }
   }
 
