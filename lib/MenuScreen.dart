@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'coffee_image.dart';
 import 'drink.dart';
+import 'favorites_screen.dart';
 
 
 class MenuScreen extends StatefulWidget {
@@ -100,6 +101,23 @@ class _MenuScreenState extends State<MenuScreen> {
         title: const Text('Our Menu'),
         backgroundColor: colors.primary,
         foregroundColor: colors.onPrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bookmark),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FavoritesScreen(
+                    savedDrinks: drinks
+                        .where((d) => favoriteNames.contains(d.name))
+                        .toList(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(child: body),
     );
