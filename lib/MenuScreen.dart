@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'coffee_image.dart';
 import 'drink.dart';
 import 'favorites_screen.dart';
+import 'db_helper.dart';
 
 
 class MenuScreen extends StatefulWidget {
@@ -23,7 +24,17 @@ class _MenuScreenState extends State<MenuScreen> {
   void initState() {
     super.initState();
     _loadFavorites();
+    _loadCachedDrinks();
     fetchDrinks();
+  }
+
+  Future<void> _loadCachedDrinks() async {
+    final cached = await DBHelper.getCachedDrinks();
+    if (drinks.isEmpty && cached.isNotEmpty) {
+      setState(() {
+        drinks = cached;
+      });
+    }
   }
 
   Future<void> _loadFavorites() async {
@@ -49,11 +60,14 @@ class _MenuScreenState extends State<MenuScreen> {
       final response = await Dio().get('https://api.sampleapis.com/coffee/hot');
       final List data = response.data as List;
 
+      final fetchedDrinks = data
+          .map((e) => Drink.fromJson(e as Map<String, dynamic>))
+          .toList();
+
       setState(() {
-        drinks = data
-            .map((e) => Drink.fromJson(e as Map<String, dynamic>))
-            .toList();
+        drinks = fetchedDrinks;
       });
+      await DBHelper.cacheDrinks(fetchedDrinks);
     } catch (e) {
       print(e);
     }

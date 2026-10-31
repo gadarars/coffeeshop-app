@@ -29,4 +29,24 @@ class Drink {
       imageUrl: json['image'] ?? '',
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'ingredients': ingredients,
+      'imageUrl': imageUrl,
+    };
+  }
+
+  factory Drink.fromMap(Map<String, dynamic> map) {
+    return Drink(
+      id: map['id'],
+      name: map['name'],
+      description: map['description'],
+      ingredients: map['ingredients'],
+      imageUrl: map['imageUrl'],
+    );
+  }
 }
