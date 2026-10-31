@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'MenuScreen.dart';
+import 'sign_up_screen.dart';
+
 
 void main() {
   runApp(const CoffeeShopApp());
@@ -34,6 +36,10 @@ class _CoffeeShopAppState extends State<CoffeeShopApp> {
         path: '/',
         builder: (context, state) => StartScreen(onToggleTheme: _toggleTheme),
         routes: [
+          GoRoute(
+            path: 'signup',
+            builder: (context, state) => const SignUpScreen(),
+          ),
           GoRoute(
             path: 'menu',
             builder: (context, state) => const MenuScreen(),
@@ -97,8 +103,8 @@ class StartScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => context.go('/menu'),
-                child: const Text('View Menu'),
+                onPressed: () => context.go('/signup'),
+                child: const Text('Get Started'),
               ),
               TextButton(
                 onPressed: onToggleTheme,
